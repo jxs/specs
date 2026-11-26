@@ -18,6 +18,7 @@ Nodes advertise support for the protocol using `/waggle/1.0` as the protocol str
 **Contents**
 
 - [Overview](#overview)
+- [Definitions](#definitions)
 - [Motivations and Prior Work](#motivations-and-prior-work)
 - [Topic Membership](#topic-membership)
 - [Publishing and Dissemination](#publishing-and-dissemination)
@@ -33,6 +34,16 @@ and "OPTIONAL" in this document are to be interpreted as described in
 [RFC 2119](https://tools.ietf.org/html/rfc2119) and
 [RFC 8174](https://tools.ietf.org/html/rfc8174).
 
+## Definitions
+
+**Application**: A protocol or system that uses Waggle to disseminate objects across one or more topics, defining their objects, piece metadata, and dissemination parameters.
+
+**Implementation**: An implementation of this specification. Applications are built on top of it.
+
+**Node**: A participant in the network running an implementation of this specification.
+
+**Peer**: A remote node that the local node is connected to.
+
 ## Motivations and Prior Work
 
 The libp2p pubsub protocols have been evolving to meet the demands of their users. However, an increasingly common pattern across many applications remains poorly supported: the dissemination of incrementally reconstructed objects. Whether a large payload is deliberately split into smaller pieces for transmission or different nodes initially possess different pieces of the same application-defined object, each node begins with only partial information, and the goal is for all nodes to exchange pieces until they converge on the complete content.
@@ -47,20 +58,20 @@ There is limited utility in maintaining a stable mesh through GRAFT and PRUNE me
 
 ## Topic Membership
 
-Topics define independent dissemination scopes within the network. To subscribe to a topic, a peer opens a new dedicated outbound stream with its connected peers and MUST include the topic it wishes to participate in. Each topic is carried on its own dedicated stream. A peer subscribing to multiple topics opens a separate stream for each topic.
-Peers maintain the subscription state of their connected peers. Once subscribed, the peer becomes eligible to participate in the dissemination of objects associated with that topic. 
-To unsubscribe from a topic, a peer closes the corresponding stream, indicating that it no longer wishes to participate in dissemination for that topic. Upon closure, connected peers update their subscription state by removing the association between that peer and the topic.
+Topics define independent dissemination scopes within the network. To subscribe to a topic, a node opens a new dedicated outbound stream with its connected peers and MUST include the topic it wishes to participate in. Each topic is carried on its own dedicated stream. A node subscribing to multiple topics opens a separate stream for each topic.
+Nodes maintain the subscription state of their connected peers. Once subscribed, the node becomes eligible to participate in the dissemination of objects associated with that topic. A node MAY also publish to a topic to which it is not itself subscribed, provided it has connected peers that are subscribed to that topic.
+To unsubscribe from a topic, a node closes the corresponding stream, indicating that it no longer wishes to participate in dissemination for that topic. Upon closure, connected peers update their subscription state by removing the association between that node and the topic.
 The protocol does not prescribe how topics are created, named, or authorized. Topic management and access control are application-defined.
 
 ## Publishing and dissemination
 
- Objects are disseminated through incremental publication of their constituent pieces. A publisher may divide an object into multiple pieces and publish those pieces independently, including through repeated publication attempts. Pieces do not need to originate from a single publisher; any peer possessing a piece may participate in its propagation. Each published piece belongs to a topic and MUST be disseminated through the corresponding topic stream.
+ Objects are disseminated through incremental publication of their constituent pieces. A publisher may divide an object into multiple pieces and publish those pieces independently, including through repeated publication attempts. Pieces do not need to originate from a single publisher; any node possessing a piece may participate in its propagation. Each published piece belongs to a topic, and the corresponding topic stream MUST be the transport mechanism for its dissemination.
 
-To publish a piece, a node selects a subset of its connected peers and transmits it to them. Upon receiving a previously unknown piece, a peer updates its local object view and begins propagating the piece through its own connected peers.
+To publish a piece, the application selects a subset of its connected peers and transmits it to them. Upon receiving a previously unknown piece, a node updates its local object view and begins propagating the piece through its own connected peers.
 
-The receiving peer uses the metadata it maintains about remote peers to identify peers that are known to be missing the received piece. The peer then transmits the piece to those peers, allowing dissemination to leverage existing knowledge of incomplete views. In addition, the peer advertises its updated metadata to peers that maintain a view of its state, allowing them to track the newly available piece.
+The receiving node uses the metadata it maintains about remote peers to identify peers that are known to be missing the received piece. The node then transmits the piece to those peers, allowing dissemination to leverage existing knowledge of incomplete views. In addition, the node advertises its updated metadata to peers that maintain a view of its state, allowing them to track the newly available piece.
 
-To discover additional dissemination opportunities, a peer also selects a subset of connected peers for which it has no current metadata view and advertises its current object metadata to them. These exchanges allow peers to progressively discover missing pieces and establish additional synchronization relationships throughout the network.
+To discover additional dissemination opportunities, the application MAY select a subset of connected peers for which it has no current metadata view and advertises its current object metadata to them. These exchanges allow peers to progressively discover missing pieces and establish additional synchronization relationships throughout the network.
 
 The number of peers selected for initial publication, piece forwarding, and metadata dissemination SHOULD be configurable by implementations and tuned according to application and deployment requirements, with consideration for dissemination amplification needs, bandwidth constraints, and network overhead.
 
@@ -74,7 +85,7 @@ Applications are responsible for defining the representation and interpretation 
 
 ## Object Cache
 
-The lifetime of cached object and piece state SHOULD be configurable by implementations and tunable by applications according to their resource constraints and dissemination requirements.
+The lifetime of cached objects and piece state MUST be configurable by the application as required by it.
 
 ## Peer discovery
 
